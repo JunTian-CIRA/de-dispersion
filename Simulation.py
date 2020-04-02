@@ -53,8 +53,8 @@ T = np.zeros((len(paths)//len(chan_24c))) # reduced time stamp
 for i in range(len(paths)):
     dyn_spec[i//len(chan_24c),i%len(chan_24c)] = image_pixel[i]
     T[i//len(chan_24c)] = time[i]
-T = np.sort(T)
 dyn_spec = dyn_spec[np.argsort(T),:] # sorted according to time
+T = np.sort(T)
 
 
 simu_spec = np.zeros((len(DM),len(paths)//len(chan_24c),len(chan_24c)))
@@ -67,4 +67,10 @@ for i in range(len(DM)):
 
 
 for i in range(len(DM)):
-    fits.writeto('{0}_{1}_simulate.fits'.format(int(DM[i]),int(Fluence[i])), simu_spec[i,:,:].transpose(), overwrite=True)
+    header = fits.Header()
+    header['DM'] = DM[i]
+    header.comments['DM'] = 'DM value of the simulated signal (pc cm^{-3})'
+    header['Fluence'] = Fluence[i]
+    header.comments['Fluence'] = 'fluence of the simulated signal (Jy.ms)'
+    header['comment'] = 'the signal is assumed to last 1ms'
+    fits.writeto('DM_{0}_F_{1}_sim.fits'.format(int(DM[i]),int(Fluence[i])), simu_spec[i,:,:].transpose(), header, overwrite=True)

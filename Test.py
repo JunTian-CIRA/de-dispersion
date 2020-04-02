@@ -39,7 +39,7 @@ for i in range((DM_max-DM_min)//DM_step+1):
 
 
 # read simulated dynamic spectrum, and process one by one
-paths = sorted(glob.glob('/astro/mwasci/phancock/D0009/Jun_test/data_1st_paper/GRB191004A/simulation/*simulate.fits'))
+paths = sorted(glob.glob('/astro/mwasci/phancock/D0009/Jun_test/data_1st_paper/GRB191004A/simulation/DM_1014_F_508_sim.fits'))
 for k, path in enumerate(paths):
     hdu = fits.open(path)
     image = hdu[0].data[:,:]
@@ -60,15 +60,28 @@ for k, path in enumerate(paths):
             time_bin[i,j] = t_min+j*bin
             norm[i,j] = len(image[np.array(inds==j+1)])
     SNR_max = np.zeros((DM_max-DM_min)//DM_step+1)
+    flux_max = np.zeros((DM_max-DM_min)//DM_step+1)
+    rms = np.zeros((DM_max-DM_min)//DM_step+1)
     for i in range((DM_max-DM_min)//DM_step+1):
         norm[i,:] = norm[i,:]/np.nansum(norm[i,:])
-        flux_max = np.nanmax(flux_bin[i,:])
-        rms = np.nansum(norm[i,:]*flux_bin[i,:]**2)
-        rms = np.sqrt(rms)
-        SNR_max[i] = flux_max/rms
+        flux_max[i] = np.nanmax(flux_bin[i,:])
+        rms[i] = np.nansum(norm[i,:]*flux_bin[i,:]**2)
+        rms[i] = np.sqrt(rms[i])
+        SNR_max[i] = flux_max[i]/rms[i]
     # plot SNR_max vs DM
-    tmp = path.split('/')[-1].split('_')[0]
-    tmpp = path.split('/')[-1].split('_')[1]
-    plt.plot(DM,SNR_max)
-    plt.savefig(str(tmp) + '_' + str(tmpp) + '.png')
+    tmp = path.split('/')[-1].split('_')[1]
+    tmpp = path.split('/')[-1].split('_')[3]
+    tmppp = int((float(tmp)-DM_min)/DM_step) + 2
+    plt.plot(time_bin[tmppp,:], flux_bin[tmppp,:])
+#    plt.axvline(int(tmp), color='red', linestyle='--')
+    plt.axhline(rms[tmppp], color='red', linestyle='--')
+    plt.axhline(3*rms[tmppp], color='red', linestyle='--')
+    plt.axhline(6*rms[tmppp], color='red', linestyle='--')
+    plt.text(time_bin[tmppp,0], rms[tmppp], '$1\sigma$', fontsize=12)
+    plt.text(time_bin[tmppp,0], 3*rms[tmppp], '$3\sigma$', fontsize=12)
+    plt.text(time_bin[tmppp,0], 6*rms[tmppp], '$6\sigma$', fontsize=12)
+    plt.xlabel("Time (sec)")
+    plt.ylabel("Flux (Jy)")
+    plt.title('fluence =' + str(tmpp) + 'Jy.ms' + ', DM =' + str(int(DM[tmppp])) + '$pc\,cm^{-3}$')
+    plt.savefig('DM_' + str(int(DM[tmppp])) + '_F_' + str(tmpp) + '_lc.png')
     plt.close()
